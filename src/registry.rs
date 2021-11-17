@@ -1,6 +1,7 @@
-use crate::common::{ServiceKeyPathBuilder, ServiceRegister};
 use crate::{
-    store::KeyValueStore, Service, ServiceConfig, ServiceDescriptor, ServiceError, ServiceWatcher,
+    common::{ServiceKeyPathBuilder, ServiceRegister, MAX_MISSED_HEARTBEATS},
+    store::KeyValueStore,
+    Service, ServiceConfig, ServiceDescriptor, ServiceError, ServiceWatcher,
 };
 use snafu::ResultExt;
 
@@ -8,7 +9,7 @@ pub struct ServiceRegistry {
     pub(crate) kv_store: KeyValueStore,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ServiceRegistryOptions {
     endpoints: Vec<String>,
 }
@@ -64,7 +65,7 @@ impl ServiceRegistry {
         // Create the lease with heartbeat TTL.
         let lease = self
             .kv_store
-            .grant_lease(options.heartbeat_interval())
+            .grant_lease(MAX_MISSED_HEARTBEATS * options.heartbeat_interval())
             .await
             .context(ServiceRegister {
                 service: options.name().to_string(),

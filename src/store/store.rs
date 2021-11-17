@@ -1,7 +1,9 @@
 use etcd_client::{Client, GetOptions, PutOptions, WatchOptions};
 
-use crate::store::common::{Connect, GetPrefix, LeaseGrant, Put, SerializeValue, WatchCreate};
-use crate::store::{StoreError, StoreWatcher, TimedLease};
+use crate::store::{
+    common::{Connect, GetPrefix, LeaseGrant, Put, SerializeValue, WatchCreate},
+    StoreError, StoreWatcher, TimedLease,
+};
 use serde::Serialize;
 use serde_json::Value;
 use snafu::ResultExt;
@@ -50,7 +52,7 @@ impl KeyValueStore {
             .await
             .context(LeaseGrant { ttl })?;
 
-        Ok(TimedLease::new(lease.id(), self.client.lease_client()))
+        TimedLease::new(lease.id(), ttl, self.client.lease_client()).await
     }
 
     pub async fn get_prefix(&mut self, prefix: String) -> Result<Vec<Value>, StoreError> {
