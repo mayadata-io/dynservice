@@ -1,4 +1,5 @@
 mod common;
+pub mod dynservice;
 mod registry;
 mod search;
 mod service;
@@ -14,3 +15,5 @@ pub use search::ServiceRegistrySearchRequest;
 pub use watcher::{ServiceEvent, ServiceWatcher};
 
 pub use common::ServiceError;
+
+pub use dynservice::DynamicService;

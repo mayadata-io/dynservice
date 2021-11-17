@@ -1,6 +1,7 @@
-use crate::common::{ServiceKeyPathBuilder, ServiceRegister};
 use crate::{
-    store::KeyValueStore, Service, ServiceConfig, ServiceDescriptor, ServiceError, ServiceWatcher,
+    common::{ServiceKeyPathBuilder, ServiceRegister},
+    store::KeyValueStore,
+    Service, ServiceConfig, ServiceDescriptor, ServiceError, ServiceWatcher,
 };
 use snafu::ResultExt;
 

@@ -1,7 +1,9 @@
 use etcd_client::{Client, GetOptions, PutOptions, WatchOptions};
 
-use crate::store::common::{Connect, GetPrefix, LeaseGrant, Put, SerializeValue, WatchCreate};
-use crate::store::{StoreError, StoreWatcher, TimedLease};
+use crate::store::{
+    common::{Connect, GetPrefix, LeaseGrant, Put, SerializeValue, WatchCreate},
+    StoreError, StoreWatcher, TimedLease,
+};
 use serde::Serialize;
 use serde_json::Value;
 use snafu::ResultExt;

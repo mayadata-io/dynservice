@@ -1,5 +1,7 @@
-use crate::store::common::{LeaseKeepAlive, LeaseRevoke};
-use crate::store::StoreError;
+use crate::store::{
+    common::{LeaseKeepAlive, LeaseRevoke},
+    StoreError,
+};
 use etcd_client::LeaseClient;
 use snafu::ResultExt;
 

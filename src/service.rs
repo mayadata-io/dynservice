@@ -1,7 +1,9 @@
 //use etcdclient::EtcdLease;
-use crate::common::{ServiceHeartbeat, ServiceUnregister};
-use crate::store::TimedLease;
-use crate::{common::DEFAULT_SERVICE_TIMEOUT, ServiceError};
+use crate::{
+    common::{ServiceHeartbeat, ServiceUnregister, DEFAULT_SERVICE_TIMEOUT},
+    store::TimedLease,
+    ServiceError,
+};
 use serde::{Deserialize, Serialize};
 use snafu::ResultExt;
 
