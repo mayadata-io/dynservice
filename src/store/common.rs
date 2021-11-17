@@ -57,6 +57,10 @@ pub enum StoreError {
         source: etcd_client::Error,
     },
 
+    /// Lease expired.
+    #[snafu(display("Lease {} lost", lease))]
+    LeaseLost { lease: i64 },
+
     /// Invalid lease TTL.
     #[snafu(display("Invalid lease TTL: {}", ttl))]
     InvalidLeaseTTL { ttl: i64 },

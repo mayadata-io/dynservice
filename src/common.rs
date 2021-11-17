@@ -41,14 +41,18 @@ pub enum ServiceError {
         source: StoreError,
     },
 
-    /// Can't send heartbeat
+    /// Heartbeat lost.
+    #[snafu(display("Service {}:{} lost heartbeat", service, instance,))]
+    HeartbeatLost { service: String, instance: String },
+
+    /// Can't send heartbeat.
     #[snafu(display(
         "Service {}:{} failed to send heartbeat, error='{}'",
         service,
         instance,
         source
     ))]
-    ServiceHeartbeat {
+    HeartbeatError {
         service: String,
         instance: String,
         source: StoreError,
@@ -73,11 +77,34 @@ pub enum ServiceError {
     /// Watch stream closed, no more events can be received.
     #[snafu(display("Watch stream for key '{}' is closed", key))]
     WatchStreamClosed { key: String },
+
+    /// Failed to shutdown the service
+    #[snafu(display("Failed to shutdown service {}:{}. Error={}", service, instance, error))]
+    ServiceShutdown {
+        service: String,
+        instance: String,
+        error: String,
+    },
 }
 
 pub const DEFAULT_SERVICE_TIMEOUT: i64 = 5;
 /// Top-level ETCD key prefix for services.
 const SERVICES_NAME_DOMAIN: &str = "/mayastor.io/services";
+
+pub const MAX_MISSED_HEARTBEATS: i64 = 3;
+
+#[derive(PartialEq, Debug)]
+pub enum HeartbeatFailurePolicy {
+    Panic,
+    Stop,
+    Restart,
+}
+
+#[derive(Debug)]
+pub enum HeartbeatStatus {
+    Lost,
+    Restored,
+}
 
 #[derive(Debug, Default)]
 pub struct ServiceKeyPathBuilder {
@@ -114,5 +141,3 @@ impl ServiceKeyPathBuilder {
         }
     }
 }
-
-// TODO: TryFrom !
