@@ -75,7 +75,7 @@ impl ServiceWatcher {
 
         // In case there are more than 1 event observed, enqueue the remaining events.
         if watch_events.len() > 1 {
-            watch_events.drain(1 .. watch_events.len()).for_each(|w| {
+            watch_events.drain(1..watch_events.len()).for_each(|w| {
                 self.pending_events.push_back(w);
             })
         }

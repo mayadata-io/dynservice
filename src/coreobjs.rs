@@ -75,6 +75,7 @@ impl ServiceConfigBuilder {
         self
     }
 
+    // Set heartbeat update interval for service.
     pub fn with_heartbeat_interval(mut self, interval: i64) -> Self {
         assert!(
             interval > 0,

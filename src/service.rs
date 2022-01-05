@@ -8,6 +8,7 @@ use tokio::sync::{
     mpsc::{channel, Sender},
     Mutex,
 };
+
 use tracing::instrument;
 
 type AsyncHandler = Pin<Box<dyn Future<Output = Result<(), String>> + Send + 'static>>;
@@ -346,7 +347,7 @@ impl ServiceController {
 
         self.hb_channel = Some(sender);
 
-        let ttl = self.ttl;
+        let ttl: u64 = self.ttl as u64;
         let service = self.service.clone();
         let instance = self.instance.clone();
         let descr = Arc::clone(&self.descriptor);
@@ -358,14 +359,18 @@ impl ServiceController {
             ttl
         );
 
+        let mut heartbeat_lost_time = None;
+
         let h = tokio::spawn(async move {
             loop {
                 match descr.lock().await.as_mut() {
                     Some(d) => {
                         // We care only about TTL loss reported explicitly, as it's
                         // the only reliable trigger for heartbeat-loss related actions.
-                        // I/O errors upon heartbeat update don't count as a valid
-                        // reason to judge about heartbeat loss.
+                        // Direct I/O errors upon heartbeat update don't count as a valid
+                        // reason to judge about heartbeat loss unless all attempts to report
+                        // heartbeat failed within TTL time (measured since the moment of
+                        // the first heartbeat update failure).
                         if let Err(e) = d.send_heartbeat().await {
                             match e {
                                 ServiceError::HeartbeatLost { .. } => {
@@ -377,13 +382,44 @@ impl ServiceController {
                                     return Err(e);
                                 }
                                 _ => {
-                                    tracing::error!(
-                                        "Service {}:{} failed to send heartbeat, error={}",
-                                        service,
-                                        instance,
-                                        e,
-                                    );
+                                    if heartbeat_lost_time.is_none() {
+                                        heartbeat_lost_time = Some(std::time::Instant::now());
+
+                                        tracing::error!(
+                                            "Service {}:{} failed to send heartbeat, error={}",
+                                            service,
+                                            instance,
+                                            e,
+                                        );
+                                    } else {
+                                        // Check whether TTL is elapsed and report error in case
+                                        // all heartbeat update attemps failed within TTL interval.
+                                        let elapsed =
+                                            heartbeat_lost_time.as_ref().unwrap().elapsed();
+                                        if elapsed.as_secs() > ttl {
+                                            tracing::error!(
+                                                "Service {}:{} lost heartbeat due to exceeding heartbeat TTL ({} sec)",
+                                                service,
+                                                instance,
+                                                ttl,
+                                            );
+                                            return Err(ServiceError::HeartbeatLost {
+                                                service,
+                                                instance,
+                                            });
+                                        }
+                                    }
                                 }
+                            }
+                        } else {
+                            // Heartbeat succeeded, reset the failure time.
+                            if heartbeat_lost_time.is_some() {
+                                heartbeat_lost_time.take();
+                                tracing::info!(
+                                    "Service {}:{} successfully recovered heartbeat within TTL interval",
+                                    service,
+                                    instance,
+                                );
                             }
                         }
                     }
